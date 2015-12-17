@@ -1,0 +1,18 @@
+[package]
+name = "rusthttp"
+version = "0.0.1"
+authors = ["vycb <vycb777@gmail.com>"]
+description = "Test Rust http forms"
+readme = "README.md"
+license = "MIT"
+repository = "https://github.com/vycb/rusthttp.git"
+
+[dependencies]
+params = "*"
+iron = { version = "*", default-features = false }
+# tojson_macros = "*"
+# handlebars-iron = "*"
+rustc-serialize = "^0.3.15"
+maud = "*"
+maud_macros = "*"
+# rustache = "*"

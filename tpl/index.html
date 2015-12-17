@@ -1,0 +1,15 @@
+<html>
+  <head>
+    <title>中超联赛 {{year}}</title>
+  </head>
+  <body>
+    <h1>CSL {{year}}</h1>
+    <ul>
+    {{#teams}}
+      <li class="{{#first}}champion{{/first}}">
+      <b>{{name}}</b>: {{pts}}
+      </li>
+    {{/teams}}
+    </ul>
+  </body>
+</html>

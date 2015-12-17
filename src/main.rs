@@ -1,17 +1,22 @@
+#![deny(warnings)]
+#![feature(custom_derive)]
+#![plugin(tojson_macros)]
 #![feature(plugin)]
-#![plugin(maud_macros)]
-extern crate maud;
 extern crate rustc_serialize;
 extern crate iron;
+extern crate handlebars;
+use handlebars::{Handlebars, RenderError, RenderContext, Helper, Context};
 extern crate params;
-use std::error::Error;
+use std::io::prelude::*;
+use std::io;
+use std::fs::File;
+use std::path::Path;
 use std::collections::HashMap;
 use iron::prelude::*;
 use iron::mime::Mime;
 use iron::{Handler,status};
 use params::Params;
 use rustc_serialize::json::{ToJson, Json};
-
 
 fn handle(req: &mut Request) -> IronResult<Response> {
     println!("{:?}", req.get_ref::<Params>());
@@ -30,25 +35,24 @@ fn handle(req: &mut Request) -> IronResult<Response> {
             params::Value::Map(ref value) => println!("Map:{:?}", value),
         }
     }
+    let mut handlebars = Handlebars::new();
+    let t = load_template("tpl/template.html").ok().unwrap();
+    handlebars.register_template_string("table", t).ok().unwrap();
+    handlebars.register_helper("format", Box::new(format_helper));
+    let data = make_data();
+    /*resp.set_mut(content_type).set_mut(buffer).set_mut(status::Ok);
+    let content_type = "application/json".parse::<Mime>().unwrap();
+    Ok(resp)*/
     let content_type = "text/html".parse::<Mime>().unwrap();
-    /*let content_type = "application/json".parse::<Mime>().unwrap();
-    Ok(Response::with((content_type, status::Ok, "{\"!\"}")))*/
-    let mut resp = Response::new();
-    let name = "Rust";
-    let mut buffer = String::new();
-    html!(buffer, {
-        p { "Hi, " $name "!" }
-    }).unwrap();
-    resp.set_mut(content_type).set_mut(buffer).set_mut(status::Ok);
-    Ok(resp)
+    Ok(Response::with((content_type, status::Ok, handlebars.render("table", &data).ok().unwrap())))
 }
-
+#[derive(ToJson)]
 struct Team {
     name: String,
     pts: u16
 }
 
-impl ToJson for Team {
+/*impl ToJson for Team {
     fn to_json(&self) -> Json {
         let mut m: HashMap<String, Json> = HashMap::new();
         m.insert("name".to_string(), self.name.to_json());
@@ -56,24 +60,7 @@ impl ToJson for Team {
         m.to_json()
     }
 }
-
-fn make_datam<'a> () -> HashMap<String, Json> {
-    let mut data = HashMap::new();
-
-    data.insert("year".to_string(), "2015".to_json());
-
-    let teams = vec![ Team { name: "Jiangsu Sainty".to_string(),
-                             pts: 43u16 },
-                      Team { name: "Beijing Guoan".to_string(),
-                             pts: 27u16 },
-                      Team { name: "Guangzhou Evergrand".to_string(),
-                             pts: 22u16 },
-                      Team { name: "Shandong Luneng".to_string(),
-                             pts: 12u16 } ];
-
-    data.insert("teams".to_string(), teams.to_json());
-    data
-}
+*/
 
 fn make_data () -> HashMap<String, Json> {
     let mut data = HashMap::new();
@@ -133,9 +120,25 @@ fn main() {
        Ok(Response::with(status::BadRequest))
     });
 
-    let mut chain = Chain::new(router);
+    let chain = Chain::new(router);
 
     // chain.link_after(hbs);
 
     Iron::new(chain).http("wram:8080").unwrap();
+}
+
+fn format_helper (c: &Context, h: &Helper, _: &Handlebars, rc: &mut RenderContext) -> Result<(), RenderError> {
+    let param = h.params().get(0).unwrap();
+    let rendered = format!("{} pts", c.navigate(rc.get_path(), param));
+    try!(rc.writer.write(rendered.into_bytes().as_ref()));
+    Ok(())
+}
+
+fn load_template(name: &str) -> io::Result<String> {
+    let path = Path::new(name);
+
+    let mut file = try!(File::open(path));
+    let mut s = String::new();
+    try!(file.read_to_string(&mut s));
+    Ok(s)
 }

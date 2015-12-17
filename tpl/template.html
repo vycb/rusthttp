@@ -1,0 +1,27 @@
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>中超联赛 {{year}}</title>
+  </head>
+  <body>
+    <h1>CSL {{year}}</h1>
+    <form onsubmit="javascript:var file=$('#file'); if(!file.val()){
+	file.remove()}" method="get" enctype="multipart/form-data" action="/post/">
+	<label for="author">Search: </label>
+	<input type="text" name="sq" id="sq" value="{{sq}}"/>
+	<br/>
+  <input type="file" name="image" id="file"/>
+  <br/>
+  <input type="submit"/>
+  <br/>
+    </form>
+    <ul>
+    {{#each teams~}}
+      <li class="{{#if @first}}champion{{/if}}">
+      {{~log @index~}}
+      <b>{{name}}</b>: {{format pts ~}}
+      </li>
+    {{/each~}}
+    </ul>
+  </body>
+</html>
